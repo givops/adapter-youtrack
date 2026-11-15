@@ -25,10 +25,11 @@ public final class YouTrackProviderDefinition implements TicketProviderDefinitio
     @Override public TicketProvider provider() { return TicketProvider.YOUTRACK; }
     @Override public String displayName() { return "YouTrack"; }
     @Override public String adapterId() { return "io.givops:adapter-youtrack"; }
-    @Override public String adapterVersion() { return "0.1.0-SNAPSHOT"; }
-    @Override public String sdkApiVersion() { return "0.1"; }
+    @Override public String adapterVersion() { return "0.2.0-SNAPSHOT"; }
+    @Override public String sdkApiVersion() { return "0.2"; }
+    @Override public Map<String, String> commandLabels() { return Map.of("projectOwner", "Project lead login"); }
     @Override public List<String> capabilities() {
-        return List.of("ticketing.read", "ticketing.version-membership", "ticketing.write");
+        return List.of("ticketing.project-create", "ticketing.version-create", "ticketing.issue-create", "ticketing.read", "ticketing.version-membership");
     }
     @Override public List<String> apiProfiles() { return List.of("youtrack-rest-api"); }
     @Override public List<CredentialField> credentialFields() {
@@ -42,7 +43,7 @@ public final class YouTrackProviderDefinition implements TicketProviderDefinitio
         if (candidate == null || candidate.getRawPath() == null) return Optional.empty();
         var match = ISSUE_PATH.matcher(candidate.getRawPath());
         if (!match.matches()) return Optional.empty();
-        return Optional.of(new IssueReference(match.group(2), match.group(1) == null ? "" : match.group(1)));
+        return Optional.of(new IssueReference(match.group(2).toUpperCase(java.util.Locale.ROOT), match.group(1) == null ? "" : match.group(1)));
     }
 
     @Override public URI normalizeBaseUrl(URI value) {

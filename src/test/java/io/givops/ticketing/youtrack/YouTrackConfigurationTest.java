@@ -50,7 +50,7 @@ class YouTrackConfigurationTest {
             var definition = application.getBean(TicketProviderDefinition.class);
             AdapterTestkit.verifyDefinition(definition);
             assertThat(definition.provider()).isEqualTo(TicketProvider.valueOf("YOUTRACK"));
-            assertThat(definition.capabilities()).containsExactly("ticketing.read", "ticketing.version-membership", "ticketing.write");
+            assertThat(definition.capabilities()).containsExactly("ticketing.project-create", "ticketing.version-create", "ticketing.issue-create", "ticketing.read", "ticketing.version-membership");
             assertThat(definition.apiProfiles()).containsExactly("youtrack-rest-api");
             assertThat(definition.credentialFields()).singleElement().satisfies(field -> {
                 assertThat(field.name()).isEqualTo("apiToken");
