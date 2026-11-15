@@ -1,0 +1,85 @@
+ticketing.ticketCatalog.the.youtrack.base.url.must.be.an.https.origin.with.an.optional: The YouTrack base URL must
+  be an HTTPS origin with an optional single context path.
+ticketing.youTrackAdapter.ticketing.access.is.disabled: Ticketing access is disabled.
+ticketing.youTrackAdapter.youtrack.rejected.the.api.request: YouTrack rejected the API request.
+ticketing.youTrackConnection.the.youtrack.connection.configuration.is.invalid: The YouTrack connection configuration
+  is invalid.
+ticketing.youTrackConnection.youtrack.credentials.are.missing: YouTrack credentials are missing.
+ticketing.youTrackCredentials.the.youtrack.credential.context.changed: The YouTrack credential context changed.
+ticketing.youTrackCredentials.youtrack.credentials.are.unavailable: YouTrack credentials are unavailable.
+ticketing.youTrackPayload.youtrack.returned.an.unexpected.response.payload: YouTrack returned an unexpected response
+  payload.
+ticketing.youTrackTransport.the.youtrack.read.exceeded.its.resource.budget: The YouTrack read exceeded its resource
+  budget.
+ticketing.youTrackTransport.the.youtrack.request.could.not.be.completed: The YouTrack request could not be completed.
+ticketing.youTrackTransport.the.youtrack.request.timed.out: The YouTrack request timed out.
+ticketing.youTrackTransport.the.youtrack.request.was.interrupted: The YouTrack request was interrupted.
+ticketing.youTrackTransport.youtrack.did.not.expose.the.requested.resource: YouTrack did not expose the requested
+  resource.
+ticketing.youTrackTransport.youtrack.is.temporarily.unavailable: YouTrack is temporarily unavailable.
+ticketing.youTrackTransport.youtrack.rate.limited.the.request: YouTrack rate limited the request.
+ticketing.youTrackTransport.youtrack.rejected.the.api.request: YouTrack rejected the API request.
+ticketing.youTrackTransport.youtrack.rejected.the.configured.credentials: YouTrack rejected the configured credentials.
+ticketing.youTrackTransport.youtrack.returned.a.redirect: YouTrack returned a redirect.
+ticketing.youTrackWriteAdapter.could.not.encode.the.youtrack.request.payload: Could not encode the YouTrack request
+  payload.
+ticketing.youTrackWriteAdapter.invalid.identifier: The {label} is invalid.
+ticketing.youTrackWriteAdapter.invalid.multiline: The {label} must contain at most {maximum} characters without
+  control codes.
+ticketing.youTrackWriteAdapter.invalid.single.line: The {label} must contain between 1 and {maximum} non-control
+  characters.
+ticketing.youTrackWriteAdapter.issue.creation.parameters.are.required: Issue creation parameters are required.
+ticketing.youTrackWriteAdapter.label.assignee.id: assignee ID
+ticketing.youTrackWriteAdapter.label.issue.description: issue description
+ticketing.youTrackWriteAdapter.label.issue.summary: issue summary
+ticketing.youTrackWriteAdapter.label.leader.id: leader ID
+ticketing.youTrackWriteAdapter.label.priority: priority
+ticketing.youTrackWriteAdapter.label.project.description: project description
+ticketing.youTrackWriteAdapter.label.project.display.name: project display name
+ticketing.youTrackWriteAdapter.label.type: type
+ticketing.youTrackWriteAdapter.label.version.name: version name
+ticketing.youTrackWriteAdapter.missing.bundle.value: No matching YouTrack bundle value was found for {label}.
+ticketing.youTrackWriteAdapter.missing.custom.field: The YouTrack project does not configure a {label} custom field.
+ticketing.youTrackWriteAdapter.no.matching.youtrack.workflow.state.was.found: No matching YouTrack workflow state
+  was found.
+ticketing.youTrackWriteAdapter.project.creation.parameters.are.required: Project creation parameters are required.
+ticketing.youTrackWriteAdapter.the.project.key.must.start.with.an.uppercase.letter.followed.by.uppercase: The project
+  key must start with an uppercase letter followed by uppercase letters, digits, or underscores.
+ticketing.youTrackWriteAdapter.the.version.name.contains.unsupported.braces.or.control.characters: The version name
+  contains unsupported braces or control characters.
+ticketing.youTrackWriteAdapter.the.youtrack.credential.context.changed: The YouTrack credential context changed.
+ticketing.youTrackWriteAdapter.the.youtrack.fix.version.field.only.accepts.a.single.version: The YouTrack Fix version
+  field only accepts a single version.
+ticketing.youTrackWriteAdapter.the.youtrack.guest.user.cannot.be.used.for.write.operations: The YouTrack guest user
+  cannot be used for write operations.
+ticketing.youTrackWriteAdapter.the.youtrack.leader.id.must.be.a.valid.entity.identifier: The YouTrack leader ID
+  must be a valid entity identifier.
+ticketing.youTrackWriteAdapter.the.youtrack.project.does.not.configure.a.fix.versions.field: The YouTrack project
+  does not configure a Fix versions field.
+ticketing.youTrackWriteAdapter.the.youtrack.project.does.not.configure.a.state.custom.field: The YouTrack project
+  does not configure a State custom field.
+ticketing.youTrackWriteAdapter.the.youtrack.project.does.not.configure.an.assignee.field: The YouTrack project does
+  not configure an Assignee field.
+ticketing.youTrackWriteAdapter.the.youtrack.project.does.not.have.a.fix.versions.bundle.configured: The YouTrack
+  project does not have a Fix versions bundle configured.
+ticketing.youTrackWriteAdapter.ticketing.access.is.disabled: Ticketing access is disabled.
+ticketing.youTrackWriteAdapter.too.many.fix.versions: At most {maximum} fix versions may be attached to one issue.
+ticketing.youTrackWriteAdapter.version.creation.parameters.are.required: Version creation parameters are required.
+ticketing.youTrackWriteAdapter.version.not.unique: The Fix version ''{versionName}'' does not exist uniquely in
+  the project bundle.
+ticketing.youTrackWriteTransport.the.youtrack.write.request.could.not.be.completed: The YouTrack write request could
+  not be completed.
+ticketing.youTrackWriteTransport.the.youtrack.write.request.timed.out: The YouTrack write request timed out.
+ticketing.youTrackWriteTransport.the.youtrack.write.request.was.interrupted: The YouTrack write request was interrupted.
+ticketing.youTrackWriteTransport.youtrack.could.not.complete.the.write.request: YouTrack could not complete the
+  write request.
+ticketing.youTrackWriteTransport.youtrack.did.not.permit.the.requested.write.operation: YouTrack did not permit
+  the requested write operation.
+ticketing.youTrackWriteTransport.youtrack.is.temporarily.unavailable: YouTrack is temporarily unavailable.
+ticketing.youTrackWriteTransport.youtrack.rate.limited.the.write.request: YouTrack rate limited the write request.
+ticketing.youTrackWriteTransport.youtrack.rejected.the.configured.credentials: YouTrack rejected the configured
+  credentials.
+ticketing.youTrackWriteTransport.youtrack.rejected.the.write.payload.or.reported.a.conflicting.identifier: YouTrack
+  rejected the write payload or reported a conflicting identifier.
+ticketing.youTrackWriteTransport.youtrack.returned.a.redirect: YouTrack returned a redirect.
+youtrack.credentials.api-token: API token
