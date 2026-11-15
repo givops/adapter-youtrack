@@ -12,9 +12,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /** Provider metadata and validation are available even when credentials have not been configured. */
 public final class YouTrackProviderDefinition implements TicketProviderDefinition {
+    private static final Pattern ISSUE_PATH = Pattern.compile(
+            "(?:(/[A-Za-z0-9._-]+))?/issue/(" + IssueReference.KEY_PATTERN + ")(?:/[A-Za-z0-9._~%-]*)?");
     private final YouTrackProperties runtime;
 
     public YouTrackProviderDefinition(YouTrackProperties runtime) { this.runtime = Objects.requireNonNull(runtime); }
@@ -34,6 +37,13 @@ public final class YouTrackProviderDefinition implements TicketProviderDefinitio
     }
     @Override public String projectKeyPattern() { return "[A-Z][A-Z0-9_]{1,63}"; }
     @Override public String externalIdPattern() { return "[0-9]{1,18}(?:-[0-9]{1,18})?"; }
+
+    @Override public Optional<IssueReference> issueReference(URI candidate) {
+        if (candidate == null || candidate.getRawPath() == null) return Optional.empty();
+        var match = ISSUE_PATH.matcher(candidate.getRawPath());
+        if (!match.matches()) return Optional.empty();
+        return Optional.of(new IssueReference(match.group(2), match.group(1) == null ? "" : match.group(1)));
+    }
 
     @Override public URI normalizeBaseUrl(URI value) {
         return YouTrackBaseUrls.normalizeYouTrackBaseUrl(value, false, () -> new TicketException(

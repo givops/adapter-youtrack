@@ -22,6 +22,11 @@ product version does not disable reads. Optional product-version inspection is
 not implemented; compatibility inspection therefore remains unknown. Unit and
 HTTP fixture tests make no live YouTrack requests.
 
+The provider definition recognizes `/issue/KEY-123` URLs with an optional single
+context path and title slug. The SDK's key grammar stays fixed at API `0.1`;
+the host still validates the configured origin/context and resolves ambiguous
+project references before routing an issue.
+
 ## Build
 
 Install a Java 25 JDK, Maven 3.9+, Git and Bash, then run:
