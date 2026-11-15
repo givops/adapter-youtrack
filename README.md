@@ -8,8 +8,8 @@ build or test it. Licensed under [Apache-2.0](LICENSE).
 ## Compatibility and scope
 
 - Java 25, Spring Boot 4.0.9 and Jackson 3.
-- Maven artifact: `io.givops:adapter-youtrack:0.1.0-SNAPSHOT`.
-- SDK API: `0.1`. Artifact version, SDK compatibility, YouTrack product version,
+- Maven artifact: `io.givops:adapter-youtrack:0.2.0-SNAPSHOT`.
+- SDK API: `0.2`. Artifact version, SDK compatibility, YouTrack product version,
   and API profile are separate identifiers.
 - Provider: `YOUTRACK`; API profile: `youtrack-rest-api`, using the current `/api`
   REST dialect at an HTTPS origin or one context path, such as
@@ -23,7 +23,7 @@ not implemented; compatibility inspection therefore remains unknown. Unit and
 HTTP fixture tests make no live YouTrack requests.
 
 The provider definition recognizes `/issue/KEY-123` URLs with an optional single
-context path and title slug. The SDK's key grammar stays fixed at API `0.1`;
+context path and title slug. This adapter retains YouTrack's project-number key syntax;
 the host still validates the configured origin/context and resolves ambiguous
 project references before routing an issue.
 
