@@ -1,5 +1,7 @@
 package io.givops.ticketing.youtrack;
 
+import io.givops.ticketing.model.TicketBrowserModels.*;
+import io.givops.ticketing.port.TicketNavigationAdapter;
 import static io.givops.ticketing.youtrack.YouTrackConnection.invalidConfiguration;
 import static io.givops.ticketing.youtrack.YouTrackPayload.invalidResponse;
 import static io.givops.ticketing.youtrack.YouTrackTransport.limitExceeded;
@@ -47,7 +49,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectReader;
 import tools.jackson.databind.json.JsonMapper;
 
-public class YouTrackAdapter implements TicketProviderAdapter {
+public class YouTrackAdapter implements TicketProviderAdapter, TicketNavigationAdapter {
     private static final int PAGE_SIZE = 100;
     private static final int KEY_BATCH_SIZE = 50;
     static final String PROJECT_FIELDS = "id,shortName,name";
@@ -513,5 +515,15 @@ public class YouTrackAdapter implements TicketProviderAdapter {
             return accountId != null && !accountId.isBlank() && accountId.length() <= 128
                     && accountId.codePoints().noneMatch(Character::isISOControl);
         }
+    }
+    /** Provider-space navigation is available independently of rich content; global IDs cannot infer issue numbers. */
+    @Override public Navigation navigate(BrowserRequest request, TicketRef ticket, Access access, TicketRequestGate gate) {
+        gate.check();
+        validateQueries(List.of(new ProjectQuery(request.ticketProjectId(), request.externalProjectId(), request.projectKey(), Set.of(), null)));
+        if (!current(request.source(), access, false) || !(access instanceof YouTrackCredentials.Captured captured)
+                || !captured.context().equals(captured.connection().context(request.source()))
+                || !captured.connection().projectUrl("").equals(URI.create(YouTrackConnection.normalize(request.source().baseUrl()) + "/projects/")))
+            throw new TicketException(Code.SUPERSEDED, YouTrackMessages.format("ticketing.youTrackCredentials.the.youtrack.credential.context.changed"));
+        return new Navigation(captured.connection().projectUrl(request.externalProjectId()), null);
     }
 }

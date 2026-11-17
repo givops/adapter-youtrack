@@ -68,6 +68,12 @@ class YouTrackAdapterTest {
             ]
             """;
 
+    @Test void navigatesToBoundProviderSpaceWithoutCollectingContent() {
+        var fixture = new Fixture(); var adapter = fixture.adapter(settings(NORMALIZED_CONTEXT_SITE), LIMITS);
+        var request = new io.givops.ticketing.model.TicketBrowserModels.BrowserRequest(SOURCE, BINDING_ID, PROJECT_ID, "YT", null, NOW);
+        assertThat(adapter.navigate(request, null, adapter.captureAccess(SOURCE), new Gate()).spaceUrl()).isEqualTo(URI.create(NORMALIZED_CONTEXT_SITE + "/projects/0-1"));
+        assertThat(fixture.requests).isEmpty();
+    }
     @Test
     void validatesOriginAndSingleContextPathNormalization() {
         assertThat(YouTrackBaseUrls.normalizeYouTrackBaseUrl(URI.create("https://team.youtrack.cloud/"), false,
@@ -151,7 +157,8 @@ class YouTrackAdapterTest {
         assertThat(result.releaseMembership().issues()).containsExactly(new IssueIdentity(PROJECT_ID, "2-11"));
         assertThat(result.assignedIssues()).containsExactly(new IssueIdentity(PROJECT_ID, "2-12"));
 
-        assertThat(result.issues()).hasSize(3);
+        assertThat(result.issues()).hasSize(3).allSatisfy(issue -> assertThat(issue.description()).isNull());
+        assertThat(fixture.requests).allSatisfy(request -> assertThat(request.uri().toString()).doesNotContain("description"));
         Map<String, IssueObservation> byKey = result.issues().stream()
                 .collect(java.util.stream.Collectors.toMap(IssueObservation::issueKey, i -> i));
         assertThat(byKey.get("YT-10").statusCategory()).isEqualTo("new");
@@ -348,6 +355,7 @@ class YouTrackAdapterTest {
         String resolvedPart = resolvedAt == null ? "null" : resolvedAt.toString();
         return """
                 {"id":"%s","idReadable":"%s","summary":"%s","created":1760000000000,"updated":1760090000000,"resolved":%s,
+                 "description":"TICKET-BODY-MUST-NOT-SURVIVE",
                  "project":{"id":"0-1","shortName":"YT"},
                  "customFields":[
                    {"name":"Type","$type":"SingleEnumIssueCustomField","value":{"name":"%s"}},

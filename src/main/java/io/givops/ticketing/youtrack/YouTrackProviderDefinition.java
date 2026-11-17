@@ -25,11 +25,11 @@ public final class YouTrackProviderDefinition implements TicketProviderDefinitio
     @Override public TicketProvider provider() { return TicketProvider.YOUTRACK; }
     @Override public String displayName() { return "YouTrack"; }
     @Override public String adapterId() { return "io.givops:adapter-youtrack"; }
-    @Override public String adapterVersion() { return "0.2.0-SNAPSHOT"; }
-    @Override public String sdkApiVersion() { return "0.2"; }
+    @Override public String adapterVersion() { return "0.3.0-SNAPSHOT"; }
+    @Override public String sdkApiVersion() { return "0.3"; }
     @Override public Map<String, String> commandLabels() { return Map.of("projectOwner", "Project lead login"); }
     @Override public List<String> capabilities() {
-        return List.of("ticketing.project-create", "ticketing.version-create", "ticketing.issue-create", "ticketing.read", "ticketing.version-membership");
+        return List.of("ticketing.project-create", "ticketing.version-create", "ticketing.issue-create", "ticketing.read", "ticketing.navigation", "ticketing.version-membership", "ticketing.browse", "ticketing.content");
     }
     @Override public List<String> apiProfiles() { return List.of("youtrack-rest-api"); }
     @Override public List<CredentialField> credentialFields() {

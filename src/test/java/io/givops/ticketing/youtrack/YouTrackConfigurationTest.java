@@ -14,6 +14,8 @@ import io.givops.ticketing.model.TicketModels.TicketProvider;
 import io.givops.ticketing.port.TicketProviderAdapter;
 import io.givops.ticketing.port.TicketProviderDefinition;
 import io.givops.ticketing.port.TicketWriteAdapter;
+import io.givops.ticketing.port.TicketBrowseAdapter;
+import io.givops.ticketing.port.TicketContentAdapter;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
@@ -46,11 +48,12 @@ class YouTrackConfigurationTest {
         var captures = new AtomicInteger();
         context(request -> { captures.incrementAndGet(); throw new CredentialAccessException(); }).run(application -> {
             assertThat(application).hasNotFailed().hasSingleBean(TicketProviderDefinition.class)
-                    .hasSingleBean(TicketProviderAdapter.class).hasSingleBean(TicketWriteAdapter.class);
+                    .hasSingleBean(TicketProviderAdapter.class).hasSingleBean(TicketWriteAdapter.class)
+                    .hasSingleBean(TicketBrowseAdapter.class).hasSingleBean(TicketContentAdapter.class);
             var definition = application.getBean(TicketProviderDefinition.class);
             AdapterTestkit.verifyDefinition(definition);
             assertThat(definition.provider()).isEqualTo(TicketProvider.valueOf("YOUTRACK"));
-            assertThat(definition.capabilities()).containsExactly("ticketing.project-create", "ticketing.version-create", "ticketing.issue-create", "ticketing.read", "ticketing.version-membership");
+            assertThat(definition.capabilities()).containsExactly("ticketing.project-create", "ticketing.version-create", "ticketing.issue-create", "ticketing.read", "ticketing.navigation", "ticketing.version-membership", "ticketing.browse", "ticketing.content");
             assertThat(definition.apiProfiles()).containsExactly("youtrack-rest-api");
             assertThat(definition.credentialFields()).singleElement().satisfies(field -> {
                 assertThat(field.name()).isEqualTo("apiToken");
