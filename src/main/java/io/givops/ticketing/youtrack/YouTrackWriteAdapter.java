@@ -187,6 +187,7 @@ public class YouTrackWriteAdapter implements TicketWriteAdapter {
         String summary = validateSingleLine(command.summary(), MAX_SUMMARY_LENGTH, YouTrackMessages.format("ticketing.youTrackWriteAdapter.label.issue.summary"));
         String description = validateMultilineOptional(command.description(), MAX_ISSUE_DESCRIPTION_LENGTH,
                 YouTrackMessages.format("ticketing.youTrackWriteAdapter.label.issue.description"));
+        if (!command.fixVersions().isEmpty() && !command.versionSelectors().isEmpty()) throw invalidConfiguration();
         List<String> fixVersions = validateFixVersions(command.fixVersions());
         String explicitAssignee = validateOptionalIdentifier(command.assigneeExternalId(), YouTrackMessages.format("ticketing.youTrackWriteAdapter.label.assignee.id"));
 
@@ -200,7 +201,9 @@ public class YouTrackWriteAdapter implements TicketWriteAdapter {
                 trimToNull(command.providerStatus()), command.workflowState());
         addEnumFieldIfRequested(customFields, findFieldByName(fieldCatalog.fields(), "Priority"),
                 trimToNull(command.providerPriority()), priorityCandidates(command.priority()), YouTrackMessages.format("ticketing.youTrackWriteAdapter.label.priority"));
-        addFixVersionsIfRequested(customFields, findFixVersionField(fieldCatalog.fields()), fixVersions);
+        DetailedField versionsField = findFixVersionField(fieldCatalog.fields());
+        if (!command.versionSelectors().isEmpty()) addSelectedFixVersions(customFields, versionsField, command.versionSelectors());
+        else addFixVersionsIfRequested(customFields, versionsField, fixVersions);
         addAssigneeIfRequested(connection, gate, customFields, findAssigneeField(fieldCatalog.fields()),
                 command.assignToSelf(), explicitAssignee);
 
@@ -409,13 +412,30 @@ public class YouTrackWriteAdapter implements TicketWriteAdapter {
             if (preferred != null) {
                 return preferred;
             }
-            if (openValues.size() > 1) {
-                return openValues.get(1);
-            }
-            return openValues.isEmpty() ? null : openValues.getFirst();
+            return null;
         }
         BundleValue preferred = findValueByNames(openValues, List.of("To do", "Open", "Submitted", "New"));
         return preferred != null ? preferred : (openValues.isEmpty() ? null : openValues.getFirst());
+    }
+
+    private void addSelectedFixVersions(List<Map<String, Object>> customFields, DetailedField field,
+            List<io.givops.ticketing.model.TicketWriteModels.VersionSelector> selectors) {
+        if (field == null || selectors.size() > MAX_FIX_VERSIONS) throw invalidConfiguration();
+        boolean multi = isMultiField(field.fieldTypeId())
+                || (field.fieldTypeId() == null && "Fix versions".equalsIgnoreCase(field.fieldName()));
+        if (!multi && selectors.size() > 1) throw invalidConfiguration();
+        var elements = new ArrayList<Map<String, String>>();
+        var ids = new HashSet<String>();
+        for (var selector : selectors) {
+            var matches = field.bundleValues().stream().filter(value -> switch (selector.kind()) {
+                case NAME -> selector.value().equals(value.name());
+                case EXTERNAL_ID -> selector.value().equals(value.id());
+            }).toList();
+            if (matches.size() != 1 || !ids.add(matches.getFirst().id())) throw invalidConfiguration();
+            elements.add(Map.of("$type", "VersionBundleElement", "id", matches.getFirst().id()));
+        }
+        customFields.add(Map.of("$type", multi ? "MultiVersionIssueCustomField" : "SingleVersionIssueCustomField",
+                "name", field.fieldName(), "value", multi ? elements : elements.getFirst()));
     }
 
     private void addFixVersionsIfRequested(List<Map<String, Object>> customFields, DetailedField field,
