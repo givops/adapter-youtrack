@@ -172,6 +172,31 @@ class YouTrackWriteAdapterTest {
         assertThat(posted.path("customFields")).hasSize(5);
     }
 
+    @Test void typedVersionIdResolvesInsideTheBoundBundleWhileLegacyStringsRemainNames() {
+        var fixture=new Fixture(new Reply(CUSTOM_FIELDS_JSON.replace("1.0.0", "1.1.0")),new Reply(200,"""
+                {"id":"2-77","idReadable":"GVO-1","summary":"Typed version","created":1794736800000,"updated":1794736800000,
+                 "project":{"id":"0-12","shortName":"GVO"},"customFields":[
+                  {"name":"Fix versions","$type":"MultiVersionIssueCustomField","value":[{"id":"170-2","name":"1.1.0"}]}]}
+                """));
+        var adapter=fixture.adapter();
+        var command=new CreateIssueCommand("Typed version",null,null,null,null,null,null,null,List.of(),false,null,
+                List.of(new io.givops.ticketing.model.TicketWriteModels.VersionSelector(io.givops.ticketing.model.TicketWriteModels.VersionSelectorKind.EXTERNAL_ID,"170-2")));
+        assertThat(adapter.createIssue(SOURCE,CATALOG_PROJECT,command,adapter.captureAccess(SOURCE),new Gate()).releaseVersionIds()).containsExactly("170-2");
+        var posted=MAPPER.readTree(fixture.bodies.get(1));
+        assertThat(posted.path("customFields").get(0).path("value").get(0).path("id").asString()).isEqualTo("170-2");
+        var legacy=new Fixture(new Reply(CUSTOM_FIELDS_JSON));var legacyAdapter=legacy.adapter();
+        var legacyCommand=new CreateIssueCommand("Legacy numeric name",null,null,null,null,null,null,null,List.of("170-2"),false,null);
+        assertThatExceptionOfType(TicketException.class).isThrownBy(() -> legacyAdapter.createIssue(SOURCE,CATALOG_PROJECT,legacyCommand,legacyAdapter.captureAccess(SOURCE),new Gate()));
+        assertThat(legacy.bodies).hasSize(1);
+    }
+    @Test void refusesMissingProgressStateWithoutCreatingAnOpenIssue() {
+        var fixture=new Fixture(new Reply(CUSTOM_FIELDS_JSON.replace("In Progress","Unclassified")));
+        var adapter=fixture.adapter();
+        var command=new CreateIssueCommand("Progress",null,null,null,WorkflowState.IN_PROGRESS,null,null,null,List.of(),false,null);
+        assertThatExceptionOfType(TicketException.class).isThrownBy(() -> adapter.createIssue(SOURCE,CATALOG_PROJECT,command,adapter.captureAccess(SOURCE),new Gate()));
+        assertThat(fixture.bodies).hasSize(1);
+    }
+
     @Test
     void doesNotLeakProviderErrorBodyAndRejectsDisabledWrites() {
         var secretSentinel = "sensitive-upstream-error-body";

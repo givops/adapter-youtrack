@@ -8,8 +8,8 @@ build or test it. Licensed under [Apache-2.0](LICENSE).
 ## Compatibility and scope
 
 - Java 25, Spring Boot 4.0.9 and Jackson 3.
-- Maven artifact: `io.givops:adapter-youtrack:0.3.0-SNAPSHOT`.
-- SDK API: `0.3`. Artifact version, SDK compatibility, YouTrack product version,
+- Maven artifact: `io.givops:adapter-youtrack:0.4.0-SNAPSHOT`.
+- SDK API: `0.4`. Artifact version, SDK compatibility, YouTrack product version,
   and API profile are separate identifiers.
 - Provider: `YOUTRACK`; API profile: `youtrack-rest-api`, using the current `/api`
   REST dialect at an HTTPS origin or one context path, such as
@@ -108,19 +108,17 @@ they are never compiled as message templates.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for tests, provider changes and releases.
 
-### SDK API 0.3 compatibility
+### SDK API 0.4 compatibility
 
-This source requires the exact public SDK API 0.3 and artifact version
-0.3.0-SNAPSHOT. Observation acquisition is metadata-only: issue descriptions and
+This source requires the exact public SDK API 0.4 and artifact version
+0.4.0-SNAPSHOT. Observation acquisition is metadata-only: issue descriptions and
 comments are not mapped. Existing creation/write descriptions retain their existing behavior. The `ticketing.navigation` capability supplies provider-owned project
 space links without a content fetch. A global ticket ID does not imply a local
 issue number, so an unknown ticket link remains absent.
 
-The SDK source pin selects public commit
-[`ad5dc81e0378d31a8cb4e80a531dee559adea648`](https://github.com/givops/adapter-sdk/commit/ad5dc81e0378d31a8cb4e80a531dee559adea648),
-which supplies API 0.3. The repository's default build uses that public SDK source;
-no unpublished SDK checkout is required. Browser support is available on the
-`task/provider-browser` source branch. The artifact remains a development snapshot.
+The SDK source pin selects merged API 0.4 commit `762b642cedc1b82bb4915af56313e6e3c194a04f`.
+Run `./scripts/build.sh` to build and verify against that exact public SDK.
+The artifact remains a development snapshot; a source pin does not imply a tagged release.
 
 ## Transient ticket browser
 
@@ -167,3 +165,12 @@ Native status is retained. Recognized fixed/done/resolved/verified states map to
 success only when resolved; cancelled/canceled/won't-fix/duplicate/obsolete states
 map to cancellation when resolved. Unknown workflow outcomes remain unknown.
 HTTP fixtures cover the browser without live credentials or provider access.
+
+## Explicit provisioning selectors
+
+Issue commands accept NAME and EXTERNAL_ID version selectors resolved inside the
+bound project's version bundle. Canonical IDs remain usable when names collide;
+name selection requires a unique match. Legacy `fixVersions` strings keep their
+name semantics, including numeric-looking names. Do not mix legacy values and
+explicit selectors. IN_PROGRESS requests require an actual recognized progress
+state; a missing state fails before mutation instead of falling back to OPEN.
