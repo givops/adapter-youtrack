@@ -8,13 +8,15 @@ build or test it. Licensed under [Apache-2.0](LICENSE).
 ## Compatibility and scope
 
 - Java 25, Spring Boot 4.0.9 and Jackson 3.
-- Maven artifact: `io.givops:adapter-youtrack:0.2.0-SNAPSHOT`.
-- SDK API: `0.2`. Artifact version, SDK compatibility, YouTrack product version,
+- Maven artifact: `io.givops:adapter-youtrack:0.3.0-SNAPSHOT`.
+- SDK API: `0.3`. Artifact version, SDK compatibility, YouTrack product version,
   and API profile are separate identifiers.
 - Provider: `YOUTRACK`; API profile: `youtrack-rest-api`, using the current `/api`
   REST dialect at an HTTPS origin or one context path, such as
   `https://youtrack.example.test/youtrack`.
-- Capabilities: `ticketing.read`, `ticketing.version-membership`, `ticketing.write`.
+- Capabilities: `ticketing.read`, `ticketing.version-membership`,
+  `ticketing.project-create`, `ticketing.version-create`, `ticketing.issue-create`,
+  `ticketing.navigation`, `ticketing.browse`, and `ticketing.content`.
   The library does not implement report or release-command adapters.
 
 The adapter does not claim a tested YouTrack server-version range. An unknown
@@ -105,3 +107,63 @@ required. Provider names, issue summaries and other external text stay data;
 they are never compiled as message templates.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for tests, provider changes and releases.
+
+### SDK API 0.3 compatibility
+
+This source requires the exact public SDK API 0.3 and artifact version
+0.3.0-SNAPSHOT. Observation acquisition is metadata-only: issue descriptions and
+comments are not mapped. Existing creation/write descriptions retain their existing behavior. The `ticketing.navigation` capability supplies provider-owned project
+space links without a content fetch. A global ticket ID does not imply a local
+issue number, so an unknown ticket link remains absent.
+
+The SDK source pin selects public commit
+[`ad5dc81e0378d31a8cb4e80a531dee559adea648`](https://github.com/givops/adapter-sdk/commit/ad5dc81e0378d31a8cb4e80a531dee559adea648),
+which supplies API 0.3. The repository's default build uses that public SDK source;
+no unpublished SDK checkout is required. Browser support is available on the
+`task/provider-browser` source branch. The artifact remains a development snapshot.
+
+## Transient ticket browser
+
+The browser and content ports are registered independently of observation reads.
+The browser supports the ordinary `ACTIVE` issue collection, including resolved
+issues. Resolution is an outcome, not archival. Drafts are excluded; archived and
+draft browsing are not advertised. `key-asc` sorts by the numeric issue-key suffix.
+
+Search is a case-insensitive NFC-normalized literal substring of the display key
+or title (`text:key-title-literal-nfc`). Status names, categories (the native
+`Type` field), and tag labels use exact native strings. Filter families combine
+with AND; multiple values within a family, including labels, combine with OR.
+Names containing YouTrack search operators stay literal data. Only these filters
+and this sort are advertised.
+
+Each list call scans the bound project's metadata through the documented
+[`/api/issues` endpoint](https://www.jetbrains.com/help/youtrack/devportal/resource-api-issues.html)
+with explicit fields, project restriction, ordering, `$top=100`, and `$skip`.
+Filtering and pagination happen locally after a complete bounded scan. The scan
+uses `TicketProperties.maxPages`, `maxObjects`, `maxHttpAttempts`, response-byte
+budgets and the host request gate. An incomplete or oversized scan fails with a
+limit error; it never produces a silently truncated filtered page. This favors
+exact filter semantics for bounded projects and does not support arbitrarily
+large project collections. Configured project keys must still match the remote
+project. List and detail requests never request descriptions or comments.
+
+Continuations are bound to the source configuration, project binding, credential
+context and query. Revisions have kind `youtrack-live`, are mutable, and identify
+that scope rather than a historical provider snapshot (`snapshot=false`). Every
+call reads current remote data. Changes between calls can move, add or remove
+results; an offset beyond the new result set fails as stale. Exact totals are
+omitted. The host owns context expiry and authenticated cursor envelopes.
+
+Detail and content use the stable database issue ID, validate the returned ID and
+project, and use provider-owned navigation URLs. The separate
+[`/api/issues/{issueID}` content request](https://www.jetbrains.com/help/youtrack/devportal/operations-api-issues.html)
+returns the exact description as Markdown, with null mapped to empty text and a
+1 MiB UTF-8 limit. It does not fetch comments, attachments, images, or external
+links. `assets=false`; no asset adapter is registered. Markdown and untrusted
+links still require the host's safe renderer. Content is transient and redacted
+from its string representation; no description is added to observation records.
+
+Native status is retained. Recognized fixed/done/resolved/verified states map to
+success only when resolved; cancelled/canceled/won't-fix/duplicate/obsolete states
+map to cancellation when resolved. Unknown workflow outcomes remain unknown.
+HTTP fixtures cover the browser without live credentials or provider access.

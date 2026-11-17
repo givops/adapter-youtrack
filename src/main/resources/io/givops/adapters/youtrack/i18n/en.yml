@@ -83,3 +83,5 @@ ticketing.youTrackWriteTransport.youtrack.rejected.the.write.payload.or.reported
   rejected the write payload or reported a conflicting identifier.
 ticketing.youTrackWriteTransport.youtrack.returned.a.redirect: YouTrack returned a redirect.
 youtrack.credentials.api-token: API token
+youtrack.browser.stale: The YouTrack browser context is stale.
+youtrack.browser.not-found: The YouTrack issue was not found.

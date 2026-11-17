@@ -42,6 +42,12 @@ public class YouTrackConfiguration {
     }
 
     @Bean
+    YouTrackBrowserAdapter youTrackBrowserAdapter(YouTrackCredentials credentials, TicketProperties limits,
+                                                YouTrackTransport transport, JsonMapper mapper) {
+        return new YouTrackBrowserAdapter(credentials, limits, transport, mapper);
+    }
+
+    @Bean
     YouTrackWriteAdapter youTrackWriteAdapter(YouTrackCredentials credentials, TicketProperties limits,
                                              YouTrackTransport reads, YouTrackWriteTransport writes,
                                              JsonMapper mapper, Clock clock) {
