@@ -30,11 +30,11 @@ Declare only implemented capabilities; do not invent server compatibility ranges
 2. Pin `sdk-revision.txt` to a published public SDK commit and verify the default
    bootstrap command from a checkout that has no private repository access.
 3. Review the change and tag the reviewed commit `v<artifact-version>`.
-4. The release workflow verifies that version, runs clean verification, and
+4. The release workflow checks that version, builds packages with tests skipped, and
    creates a draft GitHub release with the binary jar, source jar, POM, license,
    SDK revision and SHA-256 checksums. Review its artifacts before publication.
 
-The verify workflow also uploads build jars for pull requests. Downloadable
+Run `./scripts/verify-local.sh` on the final commit before merging; Java tests run locally. GitHub Actions runs package releases where configured and automatic CodeQL security scans. Downloadable
 GitHub release artifacts do not require a Maven publishing account. Consumers
 may build from public source or install the downloaded POM/jar in their own Maven
 repository. Do not commit generated jars, secrets or runtime fixture state.

@@ -38,7 +38,7 @@ Install a Java 25 JDK, Maven 3.9+, Git and Bash, then run:
 ```
 
 The script clones the public SDK at the exact commit in `sdk-revision.txt`, builds
-and installs its public modules into your Maven cache, then runs this library's
+and installs its public modules into an isolated Maven cache, then runs this library's
 clean verification. It needs ordinary public Maven Central and GitHub access,
 without GitHub Packages authentication. Outputs are in `target/`.
 
@@ -48,9 +48,9 @@ For coordinated local SDK development:
 GIVOPS_SDK_SOURCE=/absolute/path/to/adapter-sdk ./scripts/build.sh
 ```
 
-This rebuilds the specified SDK checkout. Do not share its output directory with
-a concurrent SDK build. Once the pinned SDK has been installed, `mvn clean verify`
-builds only this repository. `mvn install` additionally installs this adapter in
+This copies the specified reviewed SDK source into a temporary build directory.
+Keep the source frozen while it is copied. Once the pinned SDK has been installed,
+`mvn -Dmaven.repo.local=.m2-local clean verify` builds only this repository. `mvn install` additionally installs this adapter in
 your local Maven cache for host development.
 
 ## Install or replace the adapter
@@ -174,3 +174,14 @@ name selection requires a unique match. Legacy `fixVersions` strings keep their
 name semantics, including numeric-looking names. Do not mix legacy values and
 explicit selectors. IN_PROGRESS requests require an actual recognized progress
 state; a missing state fails before mutation instead of falling back to OPEN.
+
+
+## Local verification before merging
+
+Run `./scripts/verify-local.sh` on the final source with Java 25 and Maven 3.9+.
+It builds the public SDK and adapter tests locally; no provider account or private
+repository is required. Record the command and results before merging each PR.
+Build and test verification runs locally before merging. GitHub Actions runs
+package releases where configured and automatic CodeQL security scans.
+`GIVOPS_MAVEN_REPOSITORY` selects an isolated Maven cache (default `.m2-local/`).
+Do not share a cache between concurrent snapshot builds.

@@ -20,7 +20,8 @@ jobs:
         run: |
           version=$(python3 -c 'import xml.etree.ElementTree as E; print(E.parse("pom.xml").getroot().find("{http://maven.apache.org/POM/4.0.0}version").text)')
           test "$RELEASE_TAG" = "v$version"
-      - run: ./scripts/build.sh
+      - name: Build release packages (verification runs locally before merge)
+        run: ./scripts/build.sh --package-only
       - name: Prepare downloadable files
         run: |
           mkdir -p target/release
