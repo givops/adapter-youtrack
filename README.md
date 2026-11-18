@@ -8,8 +8,8 @@ build or test it. Licensed under [Apache-2.0](LICENSE).
 ## Compatibility and scope
 
 - Java 25, Spring Boot 4.0.9 and Jackson 3.
-- Maven artifact: `io.givops:adapter-youtrack:0.4.0-SNAPSHOT`.
-- SDK API: `0.4`. Artifact version, SDK compatibility, YouTrack product version,
+- Maven artifact: `io.givops:adapter-youtrack:0.5.0-SNAPSHOT`.
+- SDK API: `0.5`. Artifact version, SDK compatibility, YouTrack product version,
   and API profile are separate identifiers.
 - Provider: `YOUTRACK`; API profile: `youtrack-rest-api`, using the current `/api`
   REST dialect at an HTTPS origin or one context path, such as
@@ -108,15 +108,15 @@ they are never compiled as message templates.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for tests, provider changes and releases.
 
-### SDK API 0.4 compatibility
+### SDK API 0.5 compatibility
 
-This source requires the exact public SDK API 0.4 and artifact version
-0.4.0-SNAPSHOT. Observation acquisition is metadata-only: issue descriptions and
+This source requires the exact public SDK API 0.5 and artifact version
+0.5.0-SNAPSHOT. Observation acquisition is metadata-only: issue descriptions and
 comments are not mapped. Existing creation/write descriptions retain their existing behavior. The `ticketing.navigation` capability supplies provider-owned project
 space links without a content fetch. A global ticket ID does not imply a local
 issue number, so an unknown ticket link remains absent.
 
-The SDK source pin selects merged API 0.4 commit `762b642cedc1b82bb4915af56313e6e3c194a04f`.
+The SDK source pin selects merged API 0.5 commit `8226eab4967b8482327ad3cbc4b20c4e92a33ed1`.
 Run `./scripts/build.sh` to build and verify against that exact public SDK.
 The artifact remains a development snapshot; a source pin does not imply a tagged release.
 

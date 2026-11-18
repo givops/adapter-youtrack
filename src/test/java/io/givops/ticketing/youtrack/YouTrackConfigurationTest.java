@@ -73,8 +73,8 @@ class YouTrackConfigurationTest {
         var definition = new YouTrackProviderDefinition(new YouTrackProperties(Map.of()));
         assertThat(properties.getProperty("adapterId")).isEqualTo(definition.adapterId());
         assertThat(properties.getProperty("provider")).isEqualTo(definition.provider().name());
-        assertThat(properties.getProperty("adapterVersion")).isEqualTo(definition.adapterVersion());
-        assertThat(properties.getProperty("sdkApiVersion")).isEqualTo(definition.sdkApiVersion());
+        assertThat(properties.getProperty("adapterVersion")).isEqualTo(definition.adapterVersion()).isEqualTo("0.5.0-SNAPSHOT");
+        assertThat(properties.getProperty("sdkApiVersion")).isEqualTo(definition.sdkApiVersion()).isEqualTo("0.5");
     }
 
     @Test
