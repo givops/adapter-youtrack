@@ -116,10 +116,8 @@ comments are not mapped. Existing creation/write descriptions retain their exist
 space links without a content fetch. A global ticket ID does not imply a local
 issue number, so an unknown ticket link remains absent.
 
-The API 0.5 source update is pending the merged SDK source pin.
-`sdk-revision.txt` still selects the prior API 0.4 commit
-`762b642cedc1b82bb4915af56313e6e3c194a04f`; use `GIVOPS_SDK_SOURCE` with
-the reviewed API 0.5 source for coordinated verification until the pin is updated.
+The SDK source pin selects merged API 0.5 commit `8226eab4967b8482327ad3cbc4b20c4e92a33ed1`.
+Run `./scripts/build.sh` to build and verify against that exact public SDK.
 The artifact remains a development snapshot; a source pin does not imply a tagged release.
 
 ## Transient ticket browser
