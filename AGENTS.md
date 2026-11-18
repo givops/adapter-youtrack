@@ -6,6 +6,7 @@ never depend on private GivOps source, fixtures, credentials or unpublished pare
 Use synthetic provider fixtures and retain the pinned SDK contracts.
 
 Before merging a PR, run `./scripts/verify-local.sh` on its final commit and
-report the actual results. All verification belongs locally; GitHub Actions is
-reserved for package releases. Keep every removed hosted check in the local
+report the actual results. Build and test verification runs locally.
+GitHub Actions runs package releases where configured and automatic CodeQL
+security scans. Keep every removed hosted check in the local
 verification entrypoint. Do not skip tests to obtain a successful verification.

@@ -34,7 +34,7 @@ Declare only implemented capabilities; do not invent server compatibility ranges
    creates a draft GitHub release with the binary jar, source jar, POM, license,
    SDK revision and SHA-256 checksums. Review its artifacts before publication.
 
-Run `./scripts/verify-local.sh` on the final commit before merging; Java tests run locally. GitHub Actions is reserved for package releases. Downloadable
+Run `./scripts/verify-local.sh` on the final commit before merging; Java tests run locally. GitHub Actions runs package releases where configured and automatic CodeQL security scans. Downloadable
 GitHub release artifacts do not require a Maven publishing account. Consumers
 may build from public source or install the downloaded POM/jar in their own Maven
 repository. Do not commit generated jars, secrets or runtime fixture state.
