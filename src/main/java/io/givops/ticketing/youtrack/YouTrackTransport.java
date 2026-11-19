@@ -1,5 +1,6 @@
 package io.givops.ticketing.youtrack;
 
+import io.givops.adapters.ConnectionClients;
 import io.givops.ticketing.model.TicketException;
 import io.givops.ticketing.model.TicketException.Code;
 import io.givops.ticketing.port.TicketRequestGate;
@@ -28,14 +29,22 @@ import java.util.concurrent.TimeoutException;
 
 final class YouTrackTransport implements AutoCloseable {
     private final HttpClient client;
+    private final ConnectionClients clients;
     private final long maxResponseBytes;
     private final Clock clock;
 
     YouTrackTransport(HttpClient client, long maxResponseBytes, Clock clock) {
+        this(client, maxResponseBytes, clock, ConnectionClients.SYSTEM);
+    }
+
+    YouTrackTransport(HttpClient client, long maxResponseBytes, Clock clock, ConnectionClients clients) {
+        this.clients = clients;
         this.client = client;
         this.maxResponseBytes = maxResponseBytes;
         this.clock = clock;
     }
+
+    ConnectionClients connectionClients() { return clients; }
 
     static HttpClient.Builder clientBuilder(Duration connectTimeout) {
         return HttpClient.newBuilder().connectTimeout(connectTimeout).followRedirects(HttpClient.Redirect.NEVER);
@@ -60,7 +69,7 @@ final class YouTrackTransport implements AutoCloseable {
     byte[] read(URI uri, String authorization, TicketRequestGate gate, long responseLimit) {
         HttpResponse<byte[]> response = readWithRetry(uri, authorization, gate, responseLimit, BodyMode.STRICT);
         if (response.statusCode() != 200) {
-            throw remoteFailure(response.statusCode(), retryAt(response));
+            throw remoteFailure(response.statusCode(), retryAt(response), response.headers().firstValue("Content-Type").orElse(null));
         }
         return response.body();
     }
@@ -74,7 +83,7 @@ final class YouTrackTransport implements AutoCloseable {
         if (response.statusCode() == 400) {
             return new QueryResponse.Rejected();
         }
-        throw remoteFailure(response.statusCode(), retryAt(response));
+        throw remoteFailure(response.statusCode(), retryAt(response), response.headers().firstValue("Content-Type").orElse(null));
     }
 
     Optional<byte[]> readOptional(URI uri, String authorization, TicketRequestGate gate) {
@@ -86,7 +95,7 @@ final class YouTrackTransport implements AutoCloseable {
         if (response.statusCode() == 404) {
             return Optional.empty();
         }
-        throw remoteFailure(response.statusCode(), retryAt(response));
+        throw remoteFailure(response.statusCode(), retryAt(response), response.headers().firstValue("Content-Type").orElse(null));
     }
 
     private HttpResponse<byte[]> readWithRetry(URI uri, String authorization, TicketRequestGate gate,
@@ -113,7 +122,8 @@ final class YouTrackTransport implements AutoCloseable {
                                           BodyMode mode) {
         Duration timeout = gate.beforeRequest();
         long started = System.nanoTime();
-        var pending = client.sendAsync(request.timeout(timeout).build(),
+        var built = request.timeout(timeout).build();
+        var pending = clients.select(gate.connectionTarget(), built.uri(), client).sendAsync(built,
                 info -> new LimitedBody(gate, responseLimit, info.statusCode(), mode));
         try {
             long remaining = Math.max(0, timeout.toNanos() - (System.nanoTime() - started));
@@ -122,6 +132,7 @@ final class YouTrackTransport implements AutoCloseable {
             if (System.nanoTime() - started >= timeout.toNanos()) {
                 throw timeout();
             }
+            rejectHtml(response);
             return response;
         } catch (TimeoutException exception) {
             pending.cancel(true);
@@ -142,7 +153,7 @@ final class YouTrackTransport implements AutoCloseable {
             if (cause instanceof HttpTimeoutException) {
                 throw timeout();
             }
-            throw new TicketException(Code.PROVIDER_ERROR, YouTrackMessages.format("ticketing.youTrackTransport.the.youtrack.request.could.not.be.completed"));
+            throw new TicketException(Code.PROVIDER_ERROR, YouTrackMessages.format("ticketing.youTrackTransport.the.youtrack.request.could.not.be.completed")).withTransportFailure(cause);
         }
     }
 
@@ -174,7 +185,11 @@ final class YouTrackTransport implements AutoCloseable {
     }
 
     private static TicketException remoteFailure(int status, Instant retryAt) {
-        return switch (status) {
+        return remoteFailure(status, retryAt, null);
+    }
+
+    private static TicketException remoteFailure(int status, Instant retryAt, String contentType) {
+        TicketException result = switch (status) {
             case 401 -> new TicketException(Code.AUTHENTICATION_FAILED, YouTrackMessages.format("ticketing.youTrackTransport.youtrack.rejected.the.configured.credentials"));
             case 403, 404 -> new TicketException(Code.AUTHORIZATION_FAILED,
                     YouTrackMessages.format("ticketing.youTrackTransport.youtrack.did.not.expose.the.requested.resource"));
@@ -184,10 +199,19 @@ final class YouTrackTransport implements AutoCloseable {
             default -> new TicketException(Code.PROVIDER_ERROR, status >= 300 && status < 400
                     ? YouTrackMessages.format("ticketing.youTrackTransport.youtrack.returned.a.redirect") : YouTrackMessages.format("ticketing.youTrackTransport.youtrack.rejected.the.api.request"));
         };
+        return result.withHttpResponse(status, contentType);
+    }
+
+    private static void rejectHtml(HttpResponse<byte[]> response) {
+        String type = response.headers().firstValue("Content-Type").orElse("").split(";", 2)[0].strip();
+        if (response.statusCode() >= 200 && response.statusCode() < 300
+                && (type.equalsIgnoreCase("text/html") || type.equalsIgnoreCase("application/xhtml+xml"))) {
+            throw YouTrackPayload.invalidResponse().withHttpResponse(response.statusCode(), type);
+        }
     }
 
     private static TicketException timeout() {
-        return new TicketException(Code.TIMEOUT, YouTrackMessages.format("ticketing.youTrackTransport.the.youtrack.request.timed.out"));
+        return new TicketException(Code.TIMEOUT, YouTrackMessages.format("ticketing.youTrackTransport.the.youtrack.request.timed.out")).withTransportFailure(new HttpTimeoutException(""));
     }
 
     private static TicketException interrupted() {

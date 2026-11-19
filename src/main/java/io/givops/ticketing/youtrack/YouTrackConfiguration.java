@@ -1,6 +1,8 @@
 package io.givops.ticketing.youtrack;
 
 import io.givops.adapters.ContextSigner;
+import io.givops.adapters.ConnectionClients;
+import org.springframework.beans.factory.ObjectProvider;
 import io.givops.adapters.CredentialHost;
 import io.givops.ticketing.config.TicketProperties;
 import java.time.Clock;
@@ -24,15 +26,15 @@ public class YouTrackConfiguration {
     }
 
     @Bean
-    YouTrackTransport youTrackTransport(TicketProperties limits, Clock clock) {
+    YouTrackTransport youTrackTransport(TicketProperties limits, Clock clock, ObjectProvider<ConnectionClients> clients) {
         var client = YouTrackTransport.clientBuilder(limits.requestTimeout()).build();
-        return new YouTrackTransport(client, limits.maxResponseBytes(), clock);
+        return new YouTrackTransport(client, limits.maxResponseBytes(), clock, clients.getIfAvailable(() -> ConnectionClients.SYSTEM));
     }
 
     @Bean
-    YouTrackWriteTransport youTrackWriteTransport(TicketProperties limits, Clock clock) {
+    YouTrackWriteTransport youTrackWriteTransport(TicketProperties limits, Clock clock, ObjectProvider<ConnectionClients> clients) {
         var client = YouTrackTransport.clientBuilder(limits.requestTimeout()).build();
-        return new YouTrackWriteTransport(client, limits.maxResponseBytes(), clock);
+        return new YouTrackWriteTransport(client, limits.maxResponseBytes(), clock, clients.getIfAvailable(() -> ConnectionClients.SYSTEM));
     }
 
     @Bean

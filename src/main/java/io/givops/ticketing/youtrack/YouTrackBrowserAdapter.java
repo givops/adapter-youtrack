@@ -174,6 +174,8 @@ public final class YouTrackBrowserAdapter implements TicketBrowseAdapter, Ticket
             if (request.revision() != null && !revision.equals(request.revision())) throw stale();
         }
 
+        @Override public io.givops.adapters.ConnectionTarget connectionTarget() { return gate.connectionTarget(); }
+
         @Override public void check() {
             gate.check();
             credentials.requireCurrent(captured, false);

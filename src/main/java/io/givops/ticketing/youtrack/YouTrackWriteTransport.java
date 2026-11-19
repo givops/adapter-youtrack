@@ -1,5 +1,6 @@
 package io.givops.ticketing.youtrack;
 
+import io.givops.adapters.ConnectionClients;
 import io.givops.ticketing.model.TicketException;
 import io.givops.ticketing.model.TicketException.Code;
 import io.givops.ticketing.port.TicketRequestGate;
@@ -28,10 +29,16 @@ import java.util.concurrent.TimeoutException;
 /** Single-attempt HTTP POST transport for YouTrack writes; uncertain mutations are never replayed. */
 final class YouTrackWriteTransport implements AutoCloseable {
     private final HttpClient client;
+    private final ConnectionClients clients;
     private final long maxResponseBytes;
     private final Clock clock;
 
     YouTrackWriteTransport(HttpClient client, long maxResponseBytes, Clock clock) {
+        this(client, maxResponseBytes, clock, ConnectionClients.SYSTEM);
+    }
+
+    YouTrackWriteTransport(HttpClient client, long maxResponseBytes, Clock clock, ConnectionClients clients) {
+        this.clients = clients;
         this.client = client;
         this.maxResponseBytes = maxResponseBytes;
         this.clock = clock;
@@ -48,7 +55,7 @@ final class YouTrackWriteTransport implements AutoCloseable {
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofByteArray(body))
                 .build();
-        var pending = client.sendAsync(request, info -> new LimitedWriteBody(gate, maxResponseBytes, info.statusCode()));
+        var pending = clients.select(gate.connectionTarget(), request.uri(), client).sendAsync(request, info -> new LimitedWriteBody(gate, maxResponseBytes, info.statusCode()));
         HttpResponse<byte[]> response;
         try {
             long remaining = Math.max(0, timeout.toNanos() - (System.nanoTime() - started));
@@ -77,14 +84,15 @@ final class YouTrackWriteTransport implements AutoCloseable {
             if (cause instanceof HttpTimeoutException) {
                 throw timeout();
             }
-            throw new TicketException(Code.PROVIDER_ERROR, YouTrackMessages.format("ticketing.youTrackWriteTransport.the.youtrack.write.request.could.not.be.completed"));
+            throw new TicketException(Code.PROVIDER_ERROR, YouTrackMessages.format("ticketing.youTrackWriteTransport.the.youtrack.write.request.could.not.be.completed")).withTransportFailure(cause);
         }
 
         int status = response.statusCode();
         if (status == 200 || status == 201) {
+            rejectHtml(response);
             return response.body();
         }
-        throw writeFailure(status, retryAt(response));
+        throw writeFailure(status, retryAt(response), response.headers().firstValue("Content-Type").orElse(null));
     }
 
     private Instant retryAt(HttpResponse<byte[]> response) {
@@ -108,7 +116,11 @@ final class YouTrackWriteTransport implements AutoCloseable {
     }
 
     private static TicketException writeFailure(int status, Instant retryAt) {
-        return switch (status) {
+        return writeFailure(status, retryAt, null);
+    }
+
+    private static TicketException writeFailure(int status, Instant retryAt, String contentType) {
+        TicketException result = switch (status) {
             case 401 -> new TicketException(Code.AUTHENTICATION_FAILED, YouTrackMessages.format("ticketing.youTrackWriteTransport.youtrack.rejected.the.configured.credentials"));
             case 403, 404 -> new TicketException(Code.AUTHORIZATION_FAILED,
                     YouTrackMessages.format("ticketing.youTrackWriteTransport.youtrack.did.not.permit.the.requested.write.operation"));
@@ -120,10 +132,19 @@ final class YouTrackWriteTransport implements AutoCloseable {
             default -> new TicketException(Code.PROVIDER_ERROR, status >= 300 && status < 400
                     ? YouTrackMessages.format("ticketing.youTrackWriteTransport.youtrack.returned.a.redirect") : YouTrackMessages.format("ticketing.youTrackWriteTransport.youtrack.could.not.complete.the.write.request"));
         };
+        return result.withHttpResponse(status, contentType);
+    }
+
+    private static void rejectHtml(HttpResponse<byte[]> response) {
+        String type = response.headers().firstValue("Content-Type").orElse("").split(";", 2)[0].strip();
+        if (response.statusCode() >= 200 && response.statusCode() < 300
+                && (type.equalsIgnoreCase("text/html") || type.equalsIgnoreCase("application/xhtml+xml"))) {
+            throw YouTrackPayload.invalidResponse().withHttpResponse(response.statusCode(), type);
+        }
     }
 
     private static TicketException timeout() {
-        return new TicketException(Code.TIMEOUT, YouTrackMessages.format("ticketing.youTrackWriteTransport.the.youtrack.write.request.timed.out"));
+        return new TicketException(Code.TIMEOUT, YouTrackMessages.format("ticketing.youTrackWriteTransport.the.youtrack.write.request.timed.out")).withTransportFailure(new HttpTimeoutException(""));
     }
 
     @Override
