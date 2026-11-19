@@ -42,6 +42,63 @@ class YouTrackTransportTest {
     private static final String AUTH = "Bearer synthetic-youtrack-token";
 
     @Test
+    void selectsTheHostClientForTheRegisteredTargetOnRetriesAndWrites() {
+        var target = io.givops.adapters.ConnectionTarget.ticketing(java.util.UUID.randomUUID());
+        var fixture = new Fixture(new Reply(503, Map.of("Retry-After", List.of("0")), ""),
+                new Reply(200, Map.of(), "{}"), new Reply(201, Map.of(), "{}"));
+        var system = mock(HttpClient.class);
+        var selected = new java.util.concurrent.atomic.AtomicInteger();
+        io.givops.adapters.ConnectionClients clients = (actual, destination, fallback) -> {
+            assertThat(actual).isEqualTo(target);
+            assertThat(destination).isEqualTo(ENDPOINT);
+            assertThat(fallback).isSameAs(system);
+            selected.incrementAndGet();
+            return fixture.client;
+        };
+        var gate = new Gate(Duration.ofSeconds(120));
+        gate.target = target;
+        var reads = new YouTrackTransport(system, 1024, CLOCK, clients);
+        assertThat(new String(reads.read(ENDPOINT, AUTH, gate), StandardCharsets.UTF_8)).isEqualTo("{}");
+        var writes = new YouTrackWriteTransport(system, 1024, CLOCK, clients);
+        assertThat(new String(writes.postJson(ENDPOINT, AUTH, new byte[0], gate), StandardCharsets.UTF_8)).isEqualTo("{}");
+        assertThat(selected).hasValue(3);
+        verify(system, never()).sendAsync(any(), any());
+        assertThat(fixture.requests).extracting(HttpRequest::method).containsExactly("GET", "GET", "POST");
+    }
+
+    @Test
+    void diagnosesHtmlForEveryReadModeAndForWritesWithoutLeakingPageOrHeaders() {
+        var html = new Reply(200, Map.of("Content-Type", List.of("text/html; private=synthetic-secret")),
+                "<html>synthetic-private-token</html>");
+        var fixture = new Fixture(html, html, html, html);
+        var reads = new YouTrackTransport(fixture.client, 1024, CLOCK);
+        var gate = new Gate(Duration.ofSeconds(10));
+        for (Runnable attempt : List.<Runnable>of(() -> reads.read(ENDPOINT, AUTH, gate),
+                () -> reads.readOptional(ENDPOINT, AUTH, gate), () -> reads.readQuery(ENDPOINT, AUTH, gate),
+                () -> new YouTrackWriteTransport(fixture.client, 1024, CLOCK).postJson(ENDPOINT, AUTH, new byte[0], gate))) {
+            assertThatExceptionOfType(TicketException.class).isThrownBy(attempt::run).satisfies(failure -> {
+                assertThat(failure.code()).isEqualTo(Code.INVALID_RESPONSE);
+                assertThat(failure.getMessage()).contains("HTTP 200", "HTML").doesNotContain("synthetic-secret", "synthetic-private-token");
+                assertThat(failure.diagnosticEvidence()).contains("HTTP 200", "HTML");
+            });
+        }
+        assertThat(fixture.requests).hasSize(4);
+    }
+
+    @Test
+    void retainsSafeTypedNetworkEvidenceWithoutIncludingExceptionMessages() {
+        var client = mock(HttpClient.class);
+        when(client.<byte[]>sendAsync(any(), any())).thenReturn(CompletableFuture.failedFuture(
+                new IOException("synthetic-secret", new java.net.UnknownHostException("synthetic-private-token"))));
+        assertThatExceptionOfType(TicketException.class).isThrownBy(() ->
+                new YouTrackTransport(client, 1024, CLOCK).read(ENDPOINT, AUTH, new Gate(Duration.ofSeconds(10))))
+                .satisfies(failure -> {
+                    assertThat(failure.code()).isEqualTo(Code.PROVIDER_ERROR);
+                    assertThat(failure.diagnosticEvidence()).contains("DNS").doesNotContain("synthetic-secret", "synthetic-private-token");
+                });
+    }
+
+    @Test
     void configuresNoRedirectClientAndSendsBearerIdentityHeaders() {
         try (HttpClient built = YouTrackTransport.clientBuilder(Duration.ofSeconds(5)).build()) {
             assertThat(built.followRedirects()).isEqualTo(HttpClient.Redirect.NEVER);
@@ -212,6 +269,8 @@ class YouTrackTransportTest {
     }
 
     private static final class Gate implements TicketRequestGate {
+        private io.givops.adapters.ConnectionTarget target;
+        @Override public io.givops.adapters.ConnectionTarget connectionTarget() { return target; }
         private final Duration remaining;
         private long bytes;
 
